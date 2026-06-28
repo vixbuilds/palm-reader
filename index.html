@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Palm Reader</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Inter:wght@300;400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root {
+    --parchment: #f5f0e8;
+    --parchment-dark: #ede5d0;
+    --ink: #2c2416;
+    --ink-muted: #6b5c3e;
+    --ink-faint: #a89880;
+    --sage: #7a8c6e;
+    --rust: #8b4a2f;
+    --cream: #faf7f0;
+    --border: #d4c4a0;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--parchment-dark);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    padding: 48px 16px 80px;
+  }
+
+  .container {
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  /* Header */
+  header {
+    text-align: center;
+    margin-bottom: 56px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .app-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: 42px;
+    letter-spacing: 0.04em;
+    color: var(--ink);
+    line-height: 1;
+    margin-bottom: 10px;
+  }
+
+  .tagline {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 17px;
+    color: var(--ink-muted);
+    font-weight: 300;
+  }
+
+  /* Section label */
+  .section-label {
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  /* Form sections */
+  .form-section {
+    margin-bottom: 40px;
+  }
+
+  /* API Key */
+  .api-key-input-wrap {
+    position: relative;
+  }
+
+  input[type="text"],
+  input[type="password"],
+  input[type="date"] {
+    width: 100%;
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 12px 14px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    font-size: 14px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input:focus {
+    border-color: var(--ink-muted);
+  }
+
+  input::placeholder {
+    color: var(--ink-faint);
+  }
+
+  .security-note {
+    font-size: 12px;
+    color: var(--ink-faint);
+    margin-top: 8px;
+    font-style: italic;
+  }
+
+  /* Collapsible */
+  .collapsible-toggle {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--ink-muted);
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    margin-top: 10px;
+    display: inline-block;
+  }
+
+  .collapsible-body {
+    display: none;
+    margin-top: 14px;
+    padding: 16px;
+    background: var(--parchment-dark);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    font-size: 13px;
+    color: var(--ink-muted);
+    line-height: 1.7;
+  }
+
+  .collapsible-body a {
+    color: var(--rust);
+    text-underline-offset: 3px;
+  }
+
+  .collapsible-body.open { display: block; }
+
+  /* About you row */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .field-group label.section-label {
+    margin-bottom: 8px;
+  }
+
+  .field-note {
+    font-size: 12px;
+    color: var(--ink-faint);
+    margin-top: 8px;
+    font-style: italic;
+  }
+
+  /* Hand toggle */
+  .hand-toggle {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    width: fit-content;
+  }
+
+  .hand-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 24px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--ink-muted);
+    background: var(--cream);
+    border: none;
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    transition: background 0.15s, color 0.15s;
+    user-select: none;
+  }
+
+  .hand-option:not(:last-child) {
+    border-right: 1px solid var(--border);
+  }
+
+  .hand-option.selected {
+    background: var(--ink);
+    color: var(--parchment);
+  }
+
+  .hand-option svg {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+  }
+
+  /* Upload zones */
+  .upload-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .upload-zone {
+    border: 1px dashed var(--border);
+    border-radius: 2px;
+    background: var(--cream);
+    padding: 20px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+    min-height: 180px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .upload-zone:hover, .upload-zone.dragover {
+    border-color: var(--ink-muted);
+    background: var(--parchment-dark);
+  }
+
+  .upload-zone.has-image {
+    border-style: solid;
+    border-color: var(--sage);
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .upload-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+  }
+
+  .upload-preview {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: none;
+    border-radius: 2px;
+  }
+
+  .upload-zone.has-image .upload-preview {
+    display: block;
+    min-height: 180px;
+  }
+
+  .upload-zone.has-image .upload-placeholder {
+    display: none;
+  }
+
+  .upload-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    pointer-events: none;
+  }
+
+  .upload-icon {
+    width: 32px;
+    height: 32px;
+    opacity: 0.35;
+  }
+
+  .upload-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 15px;
+    font-weight: 400;
+    color: var(--ink);
+  }
+
+  .upload-hint {
+    font-size: 11px;
+    color: var(--ink-faint);
+    line-height: 1.5;
+    max-width: 140px;
+  }
+
+  /* Submit button */
+  .submit-btn {
+    width: 100%;
+    background: var(--ink);
+    color: var(--parchment);
+    border: none;
+    border-radius: 2px;
+    padding: 16px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 19px;
+    font-weight: 400;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: background 0.2s, opacity 0.2s;
+    margin-top: 8px;
+  }
+
+  .submit-btn:hover:not(:disabled) {
+    background: #1a1208;
+  }
+
+  .submit-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  /* Loading overlay */
+  .loading-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(245, 240, 232, 0.92);
+    z-index: 100;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 28px;
+    backdrop-filter: blur(2px);
+  }
+
+  .loading-overlay.active {
+    display: flex;
+  }
+
+  .loading-glyph {
+    font-size: 40px;
+    animation: spin 6s linear infinite;
+    color: var(--ink-muted);
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .loading-message {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 20px;
+    color: var(--ink-muted);
+    text-align: center;
+  }
+
+  .loading-sub {
+    font-size: 12px;
+    color: var(--ink-faint);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* Result section */
+  .result-section {
+    display: none;
+    margin-top: 48px;
+    padding-top: 40px;
+    border-top: 1px solid var(--border);
+    text-align: center;
+  }
+
+  .result-section.visible {
+    display: block;
+  }
+
+  .result-heading {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    font-weight: 300;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+
+  .result-sub {
+    font-size: 13px;
+    color: var(--ink-faint);
+    font-style: italic;
+    margin-bottom: 32px;
+  }
+
+  .result-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary {
+    background: var(--ink);
+    color: var(--parchment);
+    border: none;
+    border-radius: 2px;
+    padding: 12px 28px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 17px;
+    cursor: pointer;
+    transition: background 0.2s;
+    letter-spacing: 0.03em;
+  }
+
+  .btn-primary:hover { background: #1a1208; }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--ink-muted);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 12px 28px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 300;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+
+  .btn-secondary:hover { border-color: var(--ink-muted); }
+
+  /* Error banner */
+  .error-banner {
+    display: none;
+    background: #fdf0ec;
+    border: 1px solid #d4a090;
+    border-radius: 2px;
+    padding: 14px 16px;
+    font-size: 13px;
+    color: var(--rust);
+    margin-top: 16px;
+    line-height: 1.6;
+  }
+
+  .error-banner.visible { display: block; }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--ink-faint);
+    letter-spacing: 0.06em;
+  }
+
+  footer a {
+    color: var(--ink-faint);
+    text-decoration: none;
+  }
+
+  /* Responsive */
+  @media (max-width: 520px) {
+    .two-col { grid-template-columns: 1fr; }
+    .upload-row { grid-template-columns: 1fr; }
+    .hand-toggle { width: 100%; }
+    .hand-option { flex: 1; justify-content: center; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1 class="app-name">The Palm Reader</h1>
+    <p class="tagline">Both hands. One story.</p>
+  </header>
+
+  <!-- API Key -->
+  <div class="form-section">
+    <span class="section-label">Anthropic API Key</span>
+    <div class="api-key-input-wrap">
+      <input type="password" id="api-key" placeholder="sk-ant-..." autocomplete="off">
+    </div>
+    <p class="security-note">Your key lives only in this browser tab — it is never stored or sent anywhere except directly to Anthropic. Each reading costs approximately $0.06.</p>
+    <button class="collapsible-toggle" onclick="toggleCollapsible(this)">How do I get a key?</button>
+    <div class="collapsible-body">
+      1. Go to <a href="https://platform.claude.com/dashboard" target="_blank" rel="noopener">platform.claude.com/dashboard</a><br>
+      2. Sign in or create a free account.<br>
+      3. Navigate to <strong>API Keys</strong> in the left sidebar.<br>
+      4. Click <strong>Create Key</strong>, give it a name, and copy it here.<br><br>
+      Note: API usage is billed separately from Claude.ai subscriptions. A single reading costs a few cents.
+    </div>
+  </div>
+
+  <!-- About you -->
+  <div class="form-section">
+    <span class="section-label">About you — optional</span>
+    <div class="two-col">
+      <div class="field-group">
+        <label class="section-label" for="name">Name</label>
+        <input type="text" id="name" placeholder="Your name">
+      </div>
+      <div class="field-group">
+        <label class="section-label" for="dob">Date of birth</label>
+        <input type="date" id="dob">
+      </div>
+    </div>
+    <p class="field-note">Adding your date of birth enriches the reading with numerology.</p>
+  </div>
+
+  <!-- Dominant hand -->
+  <div class="form-section">
+    <span class="section-label">Which is your dominant hand?</span>
+    <div class="hand-toggle">
+      <button class="hand-option selected" data-hand="right" onclick="selectHand('right')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 11V8a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v3"/>
+          <path d="M14 10V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v4"/>
+          <path d="M10 10.5V8a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v6c0 3.31 2.69 6 6 6h2a6 6 0 0 0 6-6v-2a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2"/>
+        </svg>
+        Right
+      </button>
+      <button class="hand-option" data-hand="left" onclick="selectHand('left')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" style="transform:scaleX(-1)">
+          <path d="M18 11V8a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v3"/>
+          <path d="M14 10V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v4"/>
+          <path d="M10 10.5V8a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v6c0 3.31 2.69 6 6 6h2a6 6 0 0 0 6-6v-2a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2"/>
+        </svg>
+        Left
+      </button>
+    </div>
+  </div>
+
+  <!-- Hand photos -->
+  <div class="form-section">
+    <span class="section-label">Your hands — photos required</span>
+    <div class="upload-row">
+      <!-- Dominant hand -->
+      <div>
+        <label class="section-label" id="dominant-label">Dominant hand (right)</label>
+        <div class="upload-zone" id="zone-dominant" ondragover="handleDragOver(event, this)" ondragleave="handleDragLeave(this)" ondrop="handleDrop(event, 'dominant')">
+          <input type="file" accept="image/*" onchange="handleFileSelect(event, 'dominant')">
+          <div class="upload-placeholder">
+            <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+              <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <span class="upload-title">Dominant hand</span>
+            <span class="upload-hint">Palm facing up, fingers relaxed, good light</span>
+          </div>
+          <img class="upload-preview" id="preview-dominant" alt="Dominant hand preview">
+        </div>
+      </div>
+      <!-- Non-dominant hand -->
+      <div>
+        <label class="section-label">Non-dominant hand</label>
+        <div class="upload-zone" id="zone-nondominant" ondragover="handleDragOver(event, this)" ondragleave="handleDragLeave(this)" ondrop="handleDrop(event, 'nondominant')">
+          <input type="file" accept="image/*" onchange="handleFileSelect(event, 'nondominant')">
+          <div class="upload-placeholder">
+            <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+              <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <span class="upload-title">Non-dominant hand</span>
+            <span class="upload-hint">Your other hand, palm up — this reveals your natural blueprint</span>
+          </div>
+          <img class="upload-preview" id="preview-nondominant" alt="Non-dominant hand preview">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Submit -->
+  <button class="submit-btn" id="submit-btn" onclick="submitReading()">Read my palms</button>
+  <div class="error-banner" id="error-banner"></div>
+
+  <!-- Result -->
+  <div class="result-section" id="result-section">
+    <h2 class="result-heading">Your reading is ready.</h2>
+    <p class="result-sub">Download the PDF to keep it.</p>
+    <div class="result-actions">
+      <button class="btn-primary" onclick="downloadPDF()">Download PDF</button>
+      <button class="btn-secondary" onclick="resetForm()">Start a new reading</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-glyph">✦</div>
+  <div class="loading-message" id="loading-message">Reading the lines...</div>
+  <div class="loading-sub">This takes about a minute</div>
+</div>
+
+<footer>
+  <a href="https://github.com/vixbuilds" target="_blank" rel="noopener">github.com/vixbuilds</a> &nbsp;·&nbsp; for entertainment purposes only
+</footer>
+
+<script>
+// ─── State ───────────────────────────────────────────────
+let dominantHand = 'right';
+let imageData = { dominant: null, nondominant: null };
+let lastReadingText = '';
+
+const LOADING_MESSAGES = [
+  'Reading the lines...',
+  'Consulting both hands...',
+  'Following the mounts and valleys...',
+  'Almost there...',
+  'Listening to what the palms say...',
+];
+
+// ─── UI Helpers ───────────────────────────────────────────
+function toggleCollapsible(btn) {
+  const body = btn.nextElementSibling;
+  body.classList.toggle('open');
+  btn.textContent = body.classList.contains('open') ? 'Hide instructions' : 'How do I get a key?';
+}
+
+function selectHand(hand) {
+  dominantHand = hand;
+  document.querySelectorAll('.hand-option').forEach(el => {
+    el.classList.toggle('selected', el.dataset.hand === hand);
+  });
+  const nonDom = hand === 'right' ? 'left' : 'right';
+  document.getElementById('dominant-label').textContent = `Dominant hand (${hand})`;
+}
+
+function handleDragOver(e, zone) {
+  e.preventDefault();
+  zone.classList.add('dragover');
+}
+
+function handleDragLeave(zone) {
+  zone.classList.remove('dragover');
+}
+
+function handleDrop(e, key) {
+  e.preventDefault();
+  const zone = document.getElementById(`zone-${key}`);
+  zone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) processImage(file, key);
+}
+
+function handleFileSelect(e, key) {
+  const file = e.target.files[0];
+  if (file) processImage(file, key);
+}
+
+function processImage(file, key) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    imageData[key] = e.target.result; // full data URL
+    const preview = document.getElementById(`preview-${key}`);
+    const zone = document.getElementById(`zone-${key}`);
+    preview.src = e.target.result;
+    zone.classList.add('has-image');
+  };
+  reader.readAsDataURL(file);
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-banner');
+  el.textContent = msg;
+  el.classList.add('visible');
+}
+
+function clearError() {
+  const el = document.getElementById('error-banner');
+  el.classList.remove('visible');
+}
+
+function setLoading(active) {
+  document.getElementById('loading-overlay').classList.toggle('active', active);
+  document.getElementById('submit-btn').disabled = active;
+}
+
+function startLoadingMessages() {
+  let i = 0;
+  const el = document.getElementById('loading-message');
+  el.textContent = LOADING_MESSAGES[0];
+  return setInterval(() => {
+    i = (i + 1) % LOADING_MESSAGES.length;
+    el.textContent = LOADING_MESSAGES[i];
+  }, 4000);
+}
+
+function resetForm() {
+  document.getElementById('result-section').classList.remove('visible');
+  document.getElementById('api-key').value = '';
+  document.getElementById('name').value = '';
+  document.getElementById('dob').value = '';
+  imageData = { dominant: null, nondominant: null };
+  ['dominant', 'nondominant'].forEach(k => {
+    document.getElementById(`preview-${k}`).src = '';
+    document.getElementById(`zone-${k}`).classList.remove('has-image');
+  });
+  selectHand('right');
+  lastReadingText = '';
+  clearError();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ─── Life Path Number ─────────────────────────────────────
+function lifePathNumber(dob) {
+  if (!dob) return null;
+  const digits = dob.replace(/-/g, '').split('').map(Number);
+  let sum = digits.reduce((a, b) => a + b, 0);
+  while (sum > 9 && sum !== 11 && sum !== 22 && sum !== 33) {
+    sum = String(sum).split('').map(Number).reduce((a, b) => a + b, 0);
+  }
+  return sum;
+}
+
+// ─── API Call ─────────────────────────────────────────────
+async function callClaude(apiKey, name, dob, lpn, dominantHand, domBase64, nonDomBase64) {
+  const nonDomHand = dominantHand === 'right' ? 'left' : 'right';
+
+  const systemPrompt = `You are an expert palmist with decades of experience. You read both hands together — the non-dominant hand reveals what a person was born with (natural temperament, potential, blueprint), and the dominant hand reveals who they have become through life and choice. Your readings are specific, nuanced, and personal — never generic. You notice fine details: the relative complexity of lines between the two hands, the presence or absence of lines, finger proportions, mounts, and what the contrast between the hands reveals about the person's arc of growth. You write in a warm, direct, literary tone. No mystical clichés. No vague flattery. The truest readings feel uncomfortably accurate. Before writing each section, note one or two specific things you can actually see in the images that are relevant to that section — a particular line, the spread of the fingers, the texture of the palm, the comparison between the two hands. Let those observations drive the interpretation rather than general palmistry rules. If you cannot see something clearly, say so rather than inventing it.`;
+
+  const personName = name || 'this person';
+  const dobLine = dob ? `Date of birth: ${dob}. Life path number: ${lpn}. Please weave in relevant numerological insights.` : '';
+
+  const numerologySection = lpn ? `\n8. NUMEROLOGY — life path number ${lpn} and how it reinforces or contrasts the palm reading` : '';
+
+  const textPrompt = `Please give a full, detailed palm reading for ${personName}.
+${dobLine}
+Dominant hand: ${dominantHand} hand (shown in the first image).
+Non-dominant hand: ${nonDomHand} hand (shown in the second image).
+
+Structure your reading with these sections, writing several substantial paragraphs for each:
+1. HAND TYPE — identify the element (Earth, Fire, Air, Water) and what it reveals
+2. THE NON-DOMINANT HAND — what they were born with, their natural blueprint
+3. THE DOMINANT HAND — who they have become, what life has shaped
+4. THE ARC — what the contrast between both hands reveals about their growth and journey
+5. CHARACTER — the full picture of who this person is
+6. LOVE & RELATIONSHIPS — how they love, what they need, what challenges them
+7. STRENGTHS & BLIND SPOTS — be honest and specific${numerologySection}
+${lpn ? '9' : '8'}. A CLOSING LINE — one final sentence that captures the essence of this person
+
+Be specific. Be observant. Reference actual features you see in the images. This should feel like a real reading, not a template.`;
+
+  // Strip the data URL prefix to get raw base64
+  const domImg = domBase64.split(',')[1];
+  const nonDomImg = nonDomBase64.split(',')[1];
+
+  // Detect media type
+  const domMime = domBase64.match(/data:([^;]+);/)?.[1] || 'image/jpeg';
+  const nonDomMime = nonDomBase64.match(/data:([^;]+);/)?.[1] || 'image/jpeg';
+
+  const userContent = [
+    { type: 'text', text: textPrompt },
+    { type: 'image', source: { type: 'base64', media_type: domMime, data: domImg } },
+    { type: 'image', source: { type: 'base64', media_type: nonDomMime, data: nonDomImg } },
+  ];
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 4000,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userContent }],
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error?.message || `API error ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.content.map(b => b.text || '').join('\n');
+}
+
+// ─── Submit ───────────────────────────────────────────────
+async function submitReading() {
+  clearError();
+
+  const apiKey = document.getElementById('api-key').value.trim();
+  const name = document.getElementById('name').value.trim();
+  const dob = document.getElementById('dob').value;
+  const lpn = lifePathNumber(dob);
+
+  if (!apiKey) { showError('Please enter your Anthropic API key.'); return; }
+  if (!imageData.dominant) { showError('Please upload a photo of your dominant hand.'); return; }
+  if (!imageData.nondominant) { showError('Please upload a photo of your non-dominant hand.'); return; }
+
+  setLoading(true);
+  const msgInterval = startLoadingMessages();
+
+  try {
+    const reading = await callClaude(apiKey, name, dob, lpn, dominantHand, imageData.dominant, imageData.nondominant);
+    lastReadingText = reading;
+
+    // Store metadata for PDF
+    window._readingMeta = { name, dob, lpn, dominantHand };
+
+    document.getElementById('result-section').classList.add('visible');
+    document.getElementById('result-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (err) {
+    showError('Something went wrong: ' + err.message);
+  } finally {
+    clearInterval(msgInterval);
+    setLoading(false);
+  }
+}
+
+// ─── PDF Generation ───────────────────────────────────────
+
+
+function downloadPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+
+  const PAGE_W  = 612;
+  const PAGE_H  = 792;
+  const MARGIN  = 72;
+  const CW      = PAGE_W - MARGIN * 2;  // content width: 468pt
+  const BOTTOM  = PAGE_H - MARGIN - 36; // bottom safe zone
+
+  // ── Color palette (matches Zasha aesthetic: white pages, dark ink) ──
+  const BLACK   = [15, 12, 8];
+  const MUTED   = [80, 65, 45];
+  const FAINT   = [150, 132, 108];
+  const RULE    = [200, 188, 168];
+
+  let pageNum = 0;
+
+  const C = (rgb) => doc.setTextColor(rgb[0], rgb[1], rgb[2]);
+  const D = (rgb) => doc.setDrawColor(rgb[0], rgb[1], rgb[2]);
+  const F = (rgb) => doc.setFillColor(rgb[0], rgb[1], rgb[2]);
+
+  // ── Strip markdown from a string ──────────────────────────
+  function strip(s) {
+    return s
+      .replace(/^#{1,6}\s*/gm, '')          // ## headings
+      .replace(/\*{1,3}([^*]+)\*{1,3}/g, '$1') // **bold** *italic*
+      .replace(/^[-—]{3,}\s*$/gm, '')       // --- dividers
+      .replace(/^\s*[-*]\s+/gm, '')          // bullet points
+      .trim();
+  }
+
+  // ── Thin rule line ──────────────────────────────────────
+  function rule(y) {
+    D(RULE); doc.setLineWidth(0.4);
+    doc.line(MARGIN, y, MARGIN + CW, y);
+  }
+
+  // ── Footer drawn on every page ─────────────────────────
+  function footer() {
+    doc.setFont('Times', 'italic');
+    doc.setFontSize(8);
+    C(FAINT);
+    doc.text('github.com/vixbuilds  ·  for entertainment purposes only', PAGE_W / 2, PAGE_H - 38, { align: 'center' });
+    doc.text(String(pageNum), PAGE_W / 2, PAGE_H - 24, { align: 'center' });
+  }
+
+  function startPage() {
+    pageNum++;
+    footer();
+  }
+
+  function newPage() {
+    doc.addPage();
+    startPage();
+    // Reset body defaults after page break
+    doc.setFont('Times', 'normal');
+    doc.setFontSize(12.5);
+    C(BLACK);
+  }
+
+  // ── Parse the reading text into sections ───────────────
+  // Returns [{label: string|null, paragraphs: string[]}]
+  function parseReading(raw) {
+    // Clean markdown
+    const cleaned = raw
+      .replace(/^#{1,6}\s*/gm, '')
+      .replace(/\*{1,3}([^*]+)\*{1,3}/g, '$1')
+      .replace(/^[-—]{3,}\s*$/gm, '')
+      .replace(/`/g, '');
+
+    const lines = cleaned.split('\n');
+    const sections = [];
+    let cur = null;
+    let buf = [];
+
+    // A line is a section header if it's short, contains mostly uppercase letters,
+    // optionally prefixed with a number, and not a sentence (no lowercase mid-word)
+    function isHeader(line) {
+      const l = line.trim();
+      if (!l || l.length > 70) return false;
+      // Strip leading number: "1. " or "1) "
+      const core = l.replace(/^\d+[.)]\s+/, '').trim();
+      if (core.length < 3) return false;
+      // Must be all uppercase (letters, spaces, &, /, —, -)
+      return /^[A-Z][A-Z\s&\/\-—]+$/.test(core);
+    }
+
+    function flushSection() {
+      if (cur !== null || buf.length > 0) {
+        // Merge buf into paragraphs: blank lines separate paragraphs
+        const paras = [];
+        let para = [];
+        buf.forEach(line => {
+          if (line.trim() === '') {
+            if (para.length) { paras.push(para.join(' ')); para = []; }
+          } else {
+            para.push(line.trim());
+          }
+        });
+        if (para.length) paras.push(para.join(' '));
+        sections.push({ label: cur, paragraphs: paras.filter(p => p.length > 0) });
+      }
+    }
+
+    lines.forEach(rawLine => {
+      const line = rawLine.trimEnd();
+      if (isHeader(line)) {
+        flushSection();
+        cur = line.trim().replace(/^\d+[.)]\s+/, '');
+        buf = [];
+      } else {
+        buf.push(line);
+      }
+    });
+    flushSection();
+
+    return sections;
+  }
+
+  // ── Render a paragraph, handling page breaks ───────────
+  let ry = 0; // current y cursor on reading pages
+
+  function checkBreak(needed) {
+    if (ry + needed > BOTTOM) {
+      newPage();
+      ry = MARGIN + 16;
+    }
+  }
+
+  function renderPara(text) {
+    if (!text.trim()) return;
+    doc.setFont('Times', 'normal');
+    doc.setFontSize(12.5);
+    C(BLACK);
+    const wrapped = doc.splitTextToSize(text.trim(), CW);
+    const lineH = 12.5 * 1.65;
+    wrapped.forEach(line => {
+      checkBreak(lineH);
+      doc.setFont('Times', 'normal');
+      doc.setFontSize(12.5);
+      C(BLACK);
+      doc.text(line, MARGIN, ry);
+      ry += lineH;
+    });
+    ry += 7; // paragraph gap
+  }
+
+  function renderSectionHeader(label) {
+    checkBreak(48);
+    ry += 10;
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(9);
+    C(BLACK);
+    doc.text(label.toUpperCase(), MARGIN, ry);
+    ry += 5;
+    rule(ry);
+    ry += 16;
+    // Reset body font immediately
+    doc.setFont('Times', 'normal');
+    doc.setFontSize(12.5);
+    C(BLACK);
+  }
+
+  // ══════════════════════════════════════════════════════
+  // PAGE 1 — COVER
+  // ══════════════════════════════════════════════════════
+  startPage();
+
+  const meta = window._readingMeta || {};
+  const displayName = meta.name || 'Anonymous';
+  const nonDomHand  = (meta.dominantHand === 'right') ? 'left' : 'right';
+
+  // Cover layout — all measurements work downward from a fixed anchor.
+  // jsPDF text y = baseline. For a font of size N:
+  //   cap height ≈ 0.72 * N (top of uppercase letters above baseline)
+  //   descender  ≈ 0.22 * N (below baseline)
+  // We place elements top-to-bottom, tracking the *bottom* of each element.
+
+  const NAME_SIZE   = 42;
+  const LABEL_SIZE  = 10;
+  const SUB_SIZE    = 11;
+  const INTRO_SIZE  = 12;
+  const LINE_H_SUB  = SUB_SIZE * 1.5;
+  const LINE_H_INTRO = INTRO_SIZE * 1.6;
+
+  // Start: eyebrow label baseline at 32% down
+  let cy = PAGE_H * 0.32;
+
+  // 1. Eyebrow label — "A Full Palm Reading"
+  doc.setFont('Times', 'italic');
+  doc.setFontSize(LABEL_SIZE);
+  C(FAINT);
+  doc.text('A Full Palm Reading', PAGE_W / 2, cy, { align: 'center' });
+  // Bottom of label text ≈ cy + descender (0.22 * 10 = 2pt), round to 2
+  // Gap before name cap-top: 10pt
+  // Name baseline = cy + 2 + 10 + cap_height(42) = cy + 2 + 10 + 30 = cy + 42
+  cy += 42;
+
+  // 2. Name
+  doc.setFont('Times', 'normal');
+  doc.setFontSize(NAME_SIZE);
+  C(BLACK);
+  doc.text(displayName, PAGE_W / 2, cy, { align: 'center' });
+  // Bottom of name (including descender 0.22*42 ≈ 9pt): cy + 9
+  // Gap before rule: 10pt
+  cy += 9 + 10;
+
+  // 3. Rule
+  rule(cy);
+  // Gap after rule before subtitle: 18pt
+  cy += 18;
+
+  // 4. Subtitle — hands line
+  doc.setFont('Times', 'italic');
+  doc.setFontSize(SUB_SIZE);
+  C(MUTED);
+  doc.text(`Dominant (${meta.dominantHand || 'right'}) & Non-dominant (${nonDomHand}) hands`, PAGE_W / 2, cy, { align: 'center' });
+  cy += LINE_H_SUB;
+
+  // 5. DOB / life path (optional)
+  if (meta.dob) {
+    const formatted = new Date(meta.dob + 'T12:00:00').toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    let dobLine = formatted;
+    if (meta.lpn) dobLine += `  ·  Life Path ${meta.lpn}`;
+    doc.text(dobLine, PAGE_W / 2, cy, { align: 'center' });
+    cy += LINE_H_SUB;
+  }
+
+  // 6. Intro paragraph — 44pt gap after subtitles
+  cy += 44;
+  doc.setFont('Times', 'normal');
+  doc.setFontSize(INTRO_SIZE);
+  C(MUTED);
+  const intro = 'The non-dominant hand shows what a person was born with — natural temperament, raw potential, and the soul\'s original blueprint. The dominant hand shows what they have done with it: how choice, experience, and time have shaped them.';
+  const introLines = doc.splitTextToSize(intro, CW);
+  doc.text(introLines, PAGE_W / 2, cy, { align: 'center' });
+
+  // ══════════════════════════════════════════════════════
+  // PAGES 2+ — READING CONTENT (page 2 reference removed)
+  // ══════════════════════════════════════════════════════
+  newPage();
+  ry = MARGIN + 16;
+
+  const sections = parseReading(lastReadingText);
+
+  // Detect and handle a closing-line section specially (render as pull quote)
+  const closingKeywords = ['CLOSING', 'CLOSING LINE', 'A CLOSING LINE'];
+
+  sections.forEach((section, idx) => {
+    const isClosing = section.label && closingKeywords.some(k => section.label.toUpperCase().includes(k));
+
+    if (section.label) {
+      if (idx > 0) ry += 6; // a little extra breathing room before each section
+      if (isClosing) {
+        // Pull-quote style for closing line
+        checkBreak(100);
+        ry += 16;
+        rule(ry);
+        ry += 22;
+        const closingText = section.paragraphs.join(' ');
+        const q = closingText.startsWith('"') ? closingText : `"${closingText}"`;
+        doc.setFont('Times', 'italic');
+        doc.setFontSize(13);
+        C(MUTED);
+        const qLines = doc.splitTextToSize(q, CW - 40);
+        doc.text(qLines, MARGIN + 20, ry);
+        ry += qLines.length * 13 * 1.65 + 18;
+        rule(ry);
+        ry += 16;
+        doc.setFont('Times', 'italic');
+        doc.setFontSize(9);
+        C(FAINT);
+        doc.text('Read from both hands. For entertainment purposes — though the truest readings always feel a little too close to home.', PAGE_W / 2, ry, { align: 'center' });
+        return; // skip normal render
+      }
+      renderSectionHeader(section.label);
+    }
+    section.paragraphs.forEach(para => renderPara(para));
+  });
+
+  // Fallback: if parsing found nothing, dump raw text
+  if (sections.length === 0) {
+    lastReadingText.split(/\n\n+/).forEach(para => renderPara(strip(para)));
+  }
+
+  doc.save('palm-reading.pdf');
+}
+</script>
+</body>
+</html>
