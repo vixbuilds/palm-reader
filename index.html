@@ -472,9 +472,42 @@
     .hand-toggle { width: 100%; }
     .hand-option { flex: 1; justify-content: center; }
   }
+
+  /* ── Garden background ── */
+  body { background: #e3eedd; }
+  .container, footer { position: relative; z-index: 1; }
+  .garden { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .corner { position: absolute; width: clamp(150px, 24vw, 300px); height: auto; }
+  .corner.tl { top: 0; left: 0; }
+  .corner.tr { top: 0; right: 0; }
+  .corner.bl { bottom: 0; left: 0; }
+  .corner.br { bottom: 0; right: 0; }
+  .vine.thin { stroke-width: 1.2; opacity: .5; }
+  .vine { fill: none; stroke: #8fa884; stroke-width: 2; stroke-linecap: round; opacity: .55; }
+  .leaf { fill: #a9c29e; opacity: .6; }
+  .bloom { transform-box: fill-box; transform-origin: center; animation: bloom 10s ease-in-out infinite; }
+  @keyframes bloom {
+    0%   { transform: scale(.1) rotate(-40deg); opacity: 0; }
+    30%  { transform: scale(1) rotate(0deg); opacity: 1; }
+    80%  { transform: scale(1) rotate(0deg); opacity: 1; }
+    100% { transform: scale(.1) rotate(25deg); opacity: 0; }
+  }
+  .firefly {
+    position: absolute; width: 5px; height: 5px; border-radius: 50%;
+    background: #f7f09a; box-shadow: 0 0 8px 3px rgba(240, 226, 110, .75);
+    opacity: 0; animation: twinkle var(--t) ease-in-out var(--d) infinite, drift var(--m) ease-in-out var(--d) infinite alternate;
+  }
+  @keyframes twinkle { 0%, 100% { opacity: 0; } 40%, 60% { opacity: .95; } }
+  @keyframes drift { from { transform: translate(0, 0); } to { transform: translate(var(--x), var(--y)); } }
+  @media (prefers-reduced-motion: reduce) {
+    .bloom, .firefly { animation: none; }
+    .bloom { opacity: 1; }
+    .firefly { opacity: .6; }
+  }
 </style>
 </head>
 <body>
+<div class="garden" id="garden" aria-hidden="true"></div>
 <div class="container">
 
   <header>
@@ -722,10 +755,10 @@ function lifePathNumber(dob) {
 async function callClaude(apiKey, name, dob, lpn, dominantHand, domBase64, nonDomBase64) {
   const nonDomHand = dominantHand === 'right' ? 'left' : 'right';
 
-  const systemPrompt = `You are an expert palmist with decades of experience. You read both hands together — the non-dominant hand reveals what a person was born with (natural temperament, potential, blueprint), and the dominant hand reveals who they have become through life and choice. Your readings are specific, nuanced, and personal — never generic. You notice fine details: the relative complexity of lines between the two hands, the presence or absence of lines, finger proportions, mounts, and what the contrast between the hands reveals about the person's arc of growth. Write plainly and warmly, in the manner of Mary Oliver. Look closely at what is actually in the photos and say one true thing about it. Use short, clear sentences and everyday words. Allow one concrete image per section, taken from ordinary life or the natural world, and use no other figurative language. No em dashes. Never use phrases like \"at the intersection of.\" Never use the \"X isn't X, it's Y\" pattern. State what is true directly. Tie each claim to a specific line or feature you can see in the photo, and say which hand it is on. If a statement could apply to almost anyone, leave it out. No mystical clichés and no flattery. In each section, weave one or two things you can actually see in the images into the writing itself, such as a particular line, the spread of the fingers, the texture of the palm, or the difference between the two hands. Do not open sections with a separate list of observations or with a line like \"What I'm looking at.\" Let what you see lead straight into what it means. If you cannot see something clearly, say so rather than inventing it.`;
+  const systemPrompt = `You are an expert palmist with decades of experience. You read both hands together — the non-dominant hand reveals what a person was born with (natural temperament, potential, blueprint), and the dominant hand reveals who they have become through life and choice. Your readings are specific, nuanced, and personal — never generic. You notice fine details: the relative complexity of lines between the two hands, the presence or absence of lines, finger proportions, mounts, and what the contrast between the hands reveals about the person's arc of growth. Write plainly and warmly, in the manner of Mary Oliver. Look closely at what is actually in the photos and say one true thing about it. Use short, clear sentences and everyday words. Allow one concrete image per section, taken from ordinary life or the natural world, and use no other figurative language. No em dashes. Never use phrases like \"at the intersection of.\" Never use the \"X isn't X, it's Y\" pattern in any form, including \"This is not X. It is Y,\" \"not X but Y,\" and \"not because X but because Y.\" Before you write a sentence that denies something, delete the denial and state only what is true. Tie each claim to a specific line or feature you can see in the photo, and say which hand it is on. If a statement could apply to almost anyone, leave it out. No mystical clichés and no flattery. In each section, weave one or two things you can actually see in the images into the writing itself, such as a particular line, the spread of the fingers, the texture of the palm, or the difference between the two hands. Do not open sections with a separate list of observations or with a line like \"What I'm looking at.\" Let what you see lead straight into what it means. If you cannot see something clearly, say so rather than inventing it. Do not assume the person has grown, healed, or become more complex or less complex. Describe only what the two hands actually show. If the two hands look alike, or you cannot tell the difference between them from the photos, say so plainly and do not invent an arc. Include at least one finding that is neutral or unflattering, such as a habit, a tension, or a limit, and state it as kindly and as directly as you would to a friend. Never show your arithmetic or correct yourself mid-sentence. Write only finished sentences.`;
 
   const personName = name || 'this person';
-  const dobLine = dob ? `Date of birth: ${dob}. Life path number: ${lpn}. Please weave in relevant numerological insights.` : '';
+  const dobLine = dob ? `Date of birth: ${dob}. Life path number: ${lpn}. This number is already calculated and correct. Use it exactly as given, do not recalculate it, and do not show any arithmetic. Please weave in relevant numerological insights.` : '';
 
   const numerologySection = lpn ? `\n8. NUMEROLOGY — life path number ${lpn} and how it reinforces or contrasts the palm reading` : '';
 
@@ -738,7 +771,7 @@ Structure your reading with these sections, writing several substantial paragrap
 1. HAND TYPE — identify the element (Earth, Fire, Air, Water) and what it reveals
 2. THE NON-DOMINANT HAND — what they were born with, their natural blueprint
 3. THE DOMINANT HAND — who they have become, what life has shaped
-4. THE ARC — what the contrast between both hands reveals about their growth and journey
+4. THE ARC — what the difference between the two hands shows. If they look alike, say that and what it suggests. Do not invent a growth story.
 5. CHARACTER — the full picture of who this person is
 6. LOVE & RELATIONSHIPS — how they love, what they need, what challenges them
 7. STRENGTHS & BLIND SPOTS — be honest and specific${numerologySection}
@@ -1116,6 +1149,67 @@ function downloadPDF() {
 
   doc.save('palm-reading.pdf');
 }
+</script>
+
+<script>
+// Decorative background: corner vines, three blooming black roses, fireflies
+(function () {
+  const garden = document.getElementById('garden');
+  const leaf = ([x, y, r, k]) => `<path class="leaf" transform="translate(${x} ${y}) rotate(${r}) scale(${k})" d="M0 0C6-8 16-8 22 0C16 8 6 8 0 0Z"/>`;
+  const rose = (x, y, size, rot, dur, delay) => `
+    <g transform="translate(${x} ${y}) rotate(${rot}) scale(${size})"><g class="bloom" style="animation-duration:${dur}s;animation-delay:${delay}s">
+      ${[0,72,144,216,288].map(a => `<ellipse rx="9" ry="13" cy="-8" transform="rotate(${a})" fill="#161314" stroke="#3b3536" stroke-width="1"/>`).join('')}
+      ${[20,92,164,236,308].map(a => `<ellipse rx="6.5" ry="9.5" cy="-5" transform="rotate(${a})" fill="#211d1e" stroke="#4a4445" stroke-width=".8"/>`).join('')}
+      ${[0,120,240].map(a => `<ellipse rx="3.5" ry="5.5" cy="-2.5" transform="rotate(${a})" fill="#2b2627" stroke="#5a5354" stroke-width=".7"/>`).join('')}
+      <path d="M-2 -1C0-4 4-2 2 1C0 3-3 2-2-1Z" fill="none" stroke="#6a6364" stroke-width=".8"/>
+    </g></g>`;
+  const svg = (cls, body) => `<svg class="corner ${cls}" viewBox="0 0 220 220">${body}</svg>`;
+
+  const tl = svg('tl', `
+    <path class="vine" d="M0 18C34 14 70 40 66 86S44 150 84 196"/>
+    <path class="vine thin" d="M66 86C92 78 112 90 120 112"/>
+    <path class="vine thin" d="M0 70C22 78 30 104 22 140S30 180 10 210"/>
+    <path class="vine thin" d="M120 112c8 6 6 16-2 16c-6-2-4-9 1-9"/>
+    ${[[30,22,-20,1.1],[52,34,40,.8],[72,60,-60,1],[60,110,70,1.2],[48,140,-30,.9],[86,190,50,1.1],[96,82,-40,.9],[114,104,30,.7],[14,84,-70,.8],[26,160,60,1]].map(leaf).join('')}
+    ${rose(66, 88, 1.35, 15, 11, 0)}
+    ${rose(23, 142, .7, -25, 8.5, 2.5)}`);
+
+  const tr = svg('tr', `
+    <path class="vine" d="M220 8C190 30 160 34 150 70S170 118 138 152"/>
+    <path class="vine thin" d="M150 70C128 66 112 78 108 98"/>
+    <path class="vine thin" d="M220 62C204 82 208 110 196 134"/>
+    <path class="vine thin" d="M108 98c-8 2-12 10-6 14c5 2 8-4 5-7"/>
+    ${[[196,22,200,1],[176,38,150,.8],[160,56,-150,1.1],[170,92,170,.9],[146,120,-140,1],[124,70,210,.8],[112,92,160,1],[208,86,190,.9],[200,112,-160,.7]].map(leaf).join('')}
+    ${rose(150, 72, 1.0, -10, 9.5, 4)}`);
+
+  const bl = svg('bl', `
+    <path class="vine" d="M10 220C20 180 6 150 40 124S96 118 112 84"/>
+    <path class="vine thin" d="M40 124C60 140 90 142 118 130"/>
+    <path class="vine thin" d="M0 168C14 160 22 150 20 134"/>
+    ${[[14,196,-80,1],[22,164,-30,1.1],[44,132,-110,.9],[70,122,-20,1],[96,112,-60,.8],[90,138,30,.9],[112,128,10,.8],[8,150,-120,.7]].map(leaf).join('')}`);
+
+  const br = svg('br', `
+    <path class="vine" d="M220 214C196 200 176 176 182 146S210 110 190 74"/>
+    <path class="vine thin" d="M182 146C160 150 144 168 140 190"/>
+    <path class="vine thin" d="M220 160C208 150 204 138 208 122"/>
+    ${[[206,204,200,1],[190,184,150,.9],[184,160,-160,1.1],[196,126,170,1],[200,92,-150,.8],[162,152,210,.9],[146,180,150,1],[212,140,190,.7]].map(leaf).join('')}
+    ${rose(184, 150, .85, 30, 10, 6.5)}`);
+
+  garden.innerHTML = tl + tr + bl + br;
+
+  for (let i = 0; i < 16; i++) {
+    const f = document.createElement('span');
+    f.className = 'firefly';
+    f.style.left = (Math.random() * 100) + '%';
+    f.style.top = (Math.random() * 100) + '%';
+    f.style.setProperty('--t', (3 + Math.random() * 4).toFixed(1) + 's');
+    f.style.setProperty('--m', (8 + Math.random() * 10).toFixed(1) + 's');
+    f.style.setProperty('--d', (-Math.random() * 10).toFixed(1) + 's');
+    f.style.setProperty('--x', (Math.random() * 120 - 60).toFixed(0) + 'px');
+    f.style.setProperty('--y', (Math.random() * 120 - 60).toFixed(0) + 'px');
+    garden.appendChild(f);
+  }
+})();
 </script>
 </body>
 </html>
