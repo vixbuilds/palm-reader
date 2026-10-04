@@ -473,6 +473,23 @@
     .hand-option { flex: 1; justify-content: center; }
   }
 
+
+  select {
+    width: 100%;
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 12px 14px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    font-size: 14px;
+    color: var(--ink);
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  select:focus { border-color: var(--ink-muted); }
+
   /* ── Garden background ── */
   body { background: #e3eedd; }
   .container, footer { position: relative; z-index: 1; }
@@ -546,6 +563,16 @@
       </div>
     </div>
     <p class="field-note">Adding your date of birth enriches the reading with numerology.</p>
+    <div class="field-group" style="margin-top:20px">
+      <label class="section-label" for="pronouns">Pronouns</label>
+      <select id="pronouns">
+        <option value="">Not specified</option>
+        <option value="she/her">she/her</option>
+        <option value="he/him">he/him</option>
+        <option value="they/them">they/them</option>
+      </select>
+      <p class="field-note">Optional. If left blank, the reading uses they/them.</p>
+    </div>
   </div>
 
   <!-- Hand photos -->
@@ -728,6 +755,7 @@ function resetForm() {
   document.getElementById('api-key').value = '';
   document.getElementById('name').value = '';
   document.getElementById('dob').value = '';
+  document.getElementById('pronouns').value = '';
   imageData = { right: null, left: null };
   ['right', 'left'].forEach(k => {
     document.getElementById(`preview-${k}`).src = '';
@@ -752,18 +780,23 @@ function lifePathNumber(dob) {
 }
 
 // ─── API Call ─────────────────────────────────────────────
-async function callClaude(apiKey, name, dob, lpn, dominantHand, domBase64, nonDomBase64) {
+async function callClaude(apiKey, name, dob, lpn, dominantHand, domBase64, nonDomBase64, pronouns) {
   const nonDomHand = dominantHand === 'right' ? 'left' : 'right';
 
-  const systemPrompt = `You are an expert palmist with decades of experience. You read both hands together — the non-dominant hand reveals what a person was born with (natural temperament, potential, blueprint), and the dominant hand reveals who they have become through life and choice. Your readings are specific, nuanced, and personal — never generic. You notice fine details: the relative complexity of lines between the two hands, the presence or absence of lines, finger proportions, mounts, and what the contrast between the hands reveals about the person's arc of growth. Write plainly and warmly, in the manner of Mary Oliver. Look closely at what is actually in the photos and say one true thing about it. Use short, clear sentences and everyday words. Allow one concrete image per section, taken from ordinary life or the natural world, and use no other figurative language. No em dashes. Never use phrases like \"at the intersection of.\" Never use the \"X isn't X, it's Y\" pattern in any form, including \"This is not X. It is Y,\" \"not X but Y,\" and \"not because X but because Y.\" Before you write a sentence that denies something, delete the denial and state only what is true. Tie each claim to a specific line or feature you can see in the photo, and say which hand it is on. If a statement could apply to almost anyone, leave it out. No mystical clichés and no flattery. In each section, weave one or two things you can actually see in the images into the writing itself, such as a particular line, the spread of the fingers, the texture of the palm, or the difference between the two hands. Do not open sections with a separate list of observations or with a line like \"What I'm looking at.\" Let what you see lead straight into what it means. If you cannot see something clearly, say so rather than inventing it. Do not assume the person has grown, healed, or become more complex or less complex. Describe only what the two hands actually show. If the two hands look alike, or you cannot tell the difference between them from the photos, say so plainly and do not invent an arc. Include at least one finding that is neutral or unflattering, such as a habit, a tension, or a limit, and state it as kindly and as directly as you would to a friend. Never show your arithmetic or correct yourself mid-sentence. Write only finished sentences.`;
+  const systemPrompt = `You are an expert palmist with decades of experience. You read both hands together — the non-dominant hand reveals what a person was born with (natural temperament, potential, blueprint), and the dominant hand reveals who they have become through life and choice. Your readings are specific, nuanced, and personal — never generic. You notice fine details: the relative complexity of lines between the two hands, the presence or absence of lines, finger proportions, mounts, and what the contrast between the hands reveals about the person's arc of growth. Write plainly and warmly, in the manner of Mary Oliver. Look closely at what is actually in the photos and say one true thing about it. Use short, clear sentences and everyday words. Allow one concrete image per section, taken from ordinary life or the natural world, and use no other figurative language. No em dashes. Never use phrases like \"at the intersection of.\" Never use the \"X isn't X, it's Y\" pattern in any form, including \"This is not X. It is Y,\" \"not X but Y,\" and \"not because X but because Y.\" Before you write a sentence that denies something, delete the denial and state only what is true. Tie each claim to a specific line or feature you can see in the photo, and say which hand it is on. If a statement could apply to almost anyone, leave it out. No mystical clichés and no flattery. In each section, weave one or two things you can actually see in the images into the writing itself, such as a particular line, the spread of the fingers, the texture of the palm, or the difference between the two hands. Do not open sections with a separate list of observations or with a line like \"What I'm looking at.\" Let what you see lead straight into what it means. If you cannot see something clearly, say so rather than inventing it. Do not assume the person has grown, healed, or become more complex or less complex. Describe only what the two hands actually show. If the two hands look alike, or you cannot tell the difference between them from the photos, say so plainly and do not invent an arc. Include at least one finding that is neutral or unflattering, such as a habit, a tension, or a limit, and state it as kindly and as directly as you would to a friend. Never show your arithmetic or correct yourself mid-sentence. Write only finished sentences. Describe only what is actually visible in the photos. Do not add details about lighting, time of day, objects, or surroundings unless they matter to a reading, and never invent any. Do not default to the same themes for every person. Do not lean on sensitivity, absorbing other people's moods, or over-giving unless the photos clearly support it. Find at least one trait that has nothing to do with emotional sensitivity. At least one of the critical points must be about how this person affects other people, not only how they affect themselves.`;
 
   const personName = name || 'this person';
   const dobLine = dob ? `Date of birth: ${dob}. Life path number: ${lpn}. This number is already calculated and correct. Use it exactly as given, do not recalculate it, and do not show any arithmetic. Please weave in relevant numerological insights.` : '';
+
+  const pronounLine = pronouns
+    ? `Pronouns: ${pronouns}. Use these pronouns when referring to this person.`
+    : `Pronouns: not given. Use they/them. Never guess gender from the name or the photos.`;
 
   const numerologySection = lpn ? `\n8. NUMEROLOGY — life path number ${lpn} and how it reinforces or contrasts the palm reading` : '';
 
   const textPrompt = `Please give a full, detailed palm reading for ${personName}.
 ${dobLine}
+${pronounLine}
 Dominant hand: ${dominantHand} hand (shown in the first image).
 Non-dominant hand: ${nonDomHand} hand (shown in the second image).
 
@@ -841,7 +874,8 @@ async function submitReading() {
     const reading = await callClaude(
       apiKey, name, dob, lpn, dominantHand,
       imageData[dominantHand],
-      imageData[dominantHand === 'right' ? 'left' : 'right']
+      imageData[dominantHand === 'right' ? 'left' : 'right'],
+      document.getElementById('pronouns').value.trim()
     );
     lastReadingText = reading;
 
