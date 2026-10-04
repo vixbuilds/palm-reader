@@ -494,15 +494,15 @@
   }
   .firefly {
     position: absolute; width: 5px; height: 5px; border-radius: 50%;
-    background: #f7f09a; box-shadow: 0 0 8px 3px rgba(240, 226, 110, .75);
+    background: #fff7a8; box-shadow: 0 0 8px 3px #ffe34d;
     opacity: 0; animation: twinkle var(--t) ease-in-out var(--d) infinite, drift var(--m) ease-in-out var(--d) infinite alternate;
   }
-  @keyframes twinkle { 0%, 100% { opacity: 0; } 40%, 60% { opacity: .95; } }
+  @keyframes twinkle { 0%, 100% { opacity: 0; } 40%, 60% { opacity: 1; } }
   @keyframes drift { from { transform: translate(0, 0); } to { transform: translate(var(--x), var(--y)); } }
   @media (prefers-reduced-motion: reduce) {
     .bloom, .firefly { animation: none; }
     .bloom { opacity: 1; }
-    .firefly { opacity: .6; }
+    .firefly { opacity: .9; }
   }
 </style>
 </head>
