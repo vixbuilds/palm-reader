@@ -515,11 +515,48 @@
     <p class="field-note">Adding your date of birth enriches the reading with numerology.</p>
   </div>
 
+  <!-- Hand photos -->
+  <div class="form-section">
+    <span class="section-label">Your hands: photos required</span>
+    <div class="upload-row">
+      <div>
+        <label class="section-label">Right hand</label>
+        <div class="upload-zone" id="zone-right" ondragover="handleDragOver(event, this)" ondragleave="handleDragLeave(this)" ondrop="handleDrop(event, 'right')">
+          <input type="file" accept="image/*" onchange="handleFileSelect(event, 'right')">
+          <div class="upload-placeholder">
+            <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+              <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <span class="upload-title">Right hand</span>
+            <span class="upload-hint">Palm facing up, fingers relaxed, good light</span>
+          </div>
+          <img class="upload-preview" id="preview-right" alt="Right hand preview">
+        </div>
+      </div>
+      <div>
+        <label class="section-label">Left hand</label>
+        <div class="upload-zone" id="zone-left" ondragover="handleDragOver(event, this)" ondragleave="handleDragLeave(this)" ondrop="handleDrop(event, 'left')">
+          <input type="file" accept="image/*" onchange="handleFileSelect(event, 'left')">
+          <div class="upload-placeholder">
+            <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+              <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <span class="upload-title">Left hand</span>
+            <span class="upload-hint">Palm facing up, fingers relaxed, good light</span>
+          </div>
+          <img class="upload-preview" id="preview-left" alt="Left hand preview">
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Dominant hand -->
   <div class="form-section">
     <span class="section-label">Which is your dominant hand?</span>
     <div class="hand-toggle">
-      <button class="hand-option selected" data-hand="right" onclick="selectHand('right')">
+      <button class="hand-option" data-hand="right" onclick="selectHand('right')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
           <path d="M18 11V8a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v3"/>
           <path d="M14 10V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v4"/>
@@ -535,45 +572,6 @@
         </svg>
         Left
       </button>
-    </div>
-  </div>
-
-  <!-- Hand photos -->
-  <div class="form-section">
-    <span class="section-label">Your hands — photos required</span>
-    <div class="upload-row">
-      <!-- Dominant hand -->
-      <div>
-        <label class="section-label" id="dominant-label">Dominant hand (right)</label>
-        <div class="upload-zone" id="zone-dominant" ondragover="handleDragOver(event, this)" ondragleave="handleDragLeave(this)" ondrop="handleDrop(event, 'dominant')">
-          <input type="file" accept="image/*" onchange="handleFileSelect(event, 'dominant')">
-          <div class="upload-placeholder">
-            <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
-              <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
-              <polyline points="21 15 16 10 5 21"/>
-            </svg>
-            <span class="upload-title">Dominant hand</span>
-            <span class="upload-hint">Palm facing up, fingers relaxed, good light</span>
-          </div>
-          <img class="upload-preview" id="preview-dominant" alt="Dominant hand preview">
-        </div>
-      </div>
-      <!-- Non-dominant hand -->
-      <div>
-        <label class="section-label">Non-dominant hand</label>
-        <div class="upload-zone" id="zone-nondominant" ondragover="handleDragOver(event, this)" ondragleave="handleDragLeave(this)" ondrop="handleDrop(event, 'nondominant')">
-          <input type="file" accept="image/*" onchange="handleFileSelect(event, 'nondominant')">
-          <div class="upload-placeholder">
-            <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
-              <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
-              <polyline points="21 15 16 10 5 21"/>
-            </svg>
-            <span class="upload-title">Non-dominant hand</span>
-            <span class="upload-hint">Your other hand, palm up — this reveals your natural blueprint</span>
-          </div>
-          <img class="upload-preview" id="preview-nondominant" alt="Non-dominant hand preview">
-        </div>
-      </div>
     </div>
   </div>
 
@@ -606,8 +604,8 @@
 
 <script>
 // ─── State ───────────────────────────────────────────────
-let dominantHand = 'right';
-let imageData = { dominant: null, nondominant: null };
+let dominantHand = null; // nothing is assumed until the user picks
+let imageData = { right: null, left: null };
 let lastReadingText = '';
 
 const LOADING_MESSAGES = [
@@ -630,8 +628,6 @@ function selectHand(hand) {
   document.querySelectorAll('.hand-option').forEach(el => {
     el.classList.toggle('selected', el.dataset.hand === hand);
   });
-  const nonDom = hand === 'right' ? 'left' : 'right';
-  document.getElementById('dominant-label').textContent = `Dominant hand (${hand})`;
 }
 
 function handleDragOver(e, zone) {
@@ -699,12 +695,13 @@ function resetForm() {
   document.getElementById('api-key').value = '';
   document.getElementById('name').value = '';
   document.getElementById('dob').value = '';
-  imageData = { dominant: null, nondominant: null };
-  ['dominant', 'nondominant'].forEach(k => {
+  imageData = { right: null, left: null };
+  ['right', 'left'].forEach(k => {
     document.getElementById(`preview-${k}`).src = '';
     document.getElementById(`zone-${k}`).classList.remove('has-image');
   });
-  selectHand('right');
+  dominantHand = null;
+  document.querySelectorAll('.hand-option').forEach(el => el.classList.remove('selected'));
   lastReadingText = '';
   clearError();
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -725,7 +722,7 @@ function lifePathNumber(dob) {
 async function callClaude(apiKey, name, dob, lpn, dominantHand, domBase64, nonDomBase64) {
   const nonDomHand = dominantHand === 'right' ? 'left' : 'right';
 
-  const systemPrompt = `You are an expert palmist with decades of experience. You read both hands together — the non-dominant hand reveals what a person was born with (natural temperament, potential, blueprint), and the dominant hand reveals who they have become through life and choice. Your readings are specific, nuanced, and personal — never generic. You notice fine details: the relative complexity of lines between the two hands, the presence or absence of lines, finger proportions, mounts, and what the contrast between the hands reveals about the person's arc of growth. You write in a warm, direct, literary tone. No mystical clichés. No vague flattery. The truest readings feel uncomfortably accurate. Before writing each section, note one or two specific things you can actually see in the images that are relevant to that section — a particular line, the spread of the fingers, the texture of the palm, the comparison between the two hands. Let those observations drive the interpretation rather than general palmistry rules. If you cannot see something clearly, say so rather than inventing it.`;
+  const systemPrompt = `You are an expert palmist with decades of experience. You read both hands together — the non-dominant hand reveals what a person was born with (natural temperament, potential, blueprint), and the dominant hand reveals who they have become through life and choice. Your readings are specific, nuanced, and personal — never generic. You notice fine details: the relative complexity of lines between the two hands, the presence or absence of lines, finger proportions, mounts, and what the contrast between the hands reveals about the person's arc of growth. Write in plain, concrete language, the way a thoughtful friend would talk. Use short sentences. No metaphors or poetic phrasing. No em dashes. Never use phrases like "at the intersection of." Never use the "X isn't X, it's Y" pattern. State what is true directly. Tie each claim to a specific line or feature you can see in the photo. If a statement could apply to almost anyone, leave it out. No mystical clichés and no flattery. Before writing each section, note one or two specific things you can actually see in the images that are relevant to that section — a particular line, the spread of the fingers, the texture of the palm, the comparison between the two hands. Let those observations drive the interpretation rather than general palmistry rules. If you cannot see something clearly, say so rather than inventing it.`;
 
   const personName = name || 'this person';
   const dobLine = dob ? `Date of birth: ${dob}. Life path number: ${lpn}. Please weave in relevant numerological insights.` : '';
@@ -745,9 +742,9 @@ Structure your reading with these sections, writing several substantial paragrap
 5. CHARACTER — the full picture of who this person is
 6. LOVE & RELATIONSHIPS — how they love, what they need, what challenges them
 7. STRENGTHS & BLIND SPOTS — be honest and specific${numerologySection}
-${lpn ? '9' : '8'}. A CLOSING LINE — one final sentence that captures the essence of this person
+${lpn ? '9' : '8'}. A CLOSING LINE — one plain sentence that sums up this person
 
-Be specific. Be observant. Reference actual features you see in the images. This should feel like a real reading, not a template.`;
+Be specific. Be observant. Reference actual features you see in the images, and always say which hand (dominant or non-dominant) each feature belongs to, using the image labels above. This should feel like a real reading, not a template.`;
 
   // Strip the data URL prefix to get raw base64
   const domImg = domBase64.split(',')[1];
@@ -759,7 +756,9 @@ Be specific. Be observant. Reference actual features you see in the images. This
 
   const userContent = [
     { type: 'text', text: textPrompt },
+    { type: 'text', text: `IMAGE 1 of 2: this is the DOMINANT hand (${dominantHand} hand). Everything you see in this image belongs to the dominant hand.` },
     { type: 'image', source: { type: 'base64', media_type: domMime, data: domImg } },
+    { type: 'text', text: `IMAGE 2 of 2: this is the NON-DOMINANT hand (${nonDomHand} hand). Everything you see in this image belongs to the non-dominant hand.` },
     { type: 'image', source: { type: 'base64', media_type: nonDomMime, data: nonDomImg } },
   ];
 
@@ -798,14 +797,19 @@ async function submitReading() {
   const lpn = lifePathNumber(dob);
 
   if (!apiKey) { showError('Please enter your Anthropic API key.'); return; }
-  if (!imageData.dominant) { showError('Please upload a photo of your dominant hand.'); return; }
-  if (!imageData.nondominant) { showError('Please upload a photo of your non-dominant hand.'); return; }
+  if (!imageData.right) { showError('Please upload a photo of your right hand.'); return; }
+  if (!imageData.left) { showError('Please upload a photo of your left hand.'); return; }
+  if (!dominantHand) { showError('Please choose your dominant hand.'); return; }
 
   setLoading(true);
   const msgInterval = startLoadingMessages();
 
   try {
-    const reading = await callClaude(apiKey, name, dob, lpn, dominantHand, imageData.dominant, imageData.nondominant);
+    const reading = await callClaude(
+      apiKey, name, dob, lpn, dominantHand,
+      imageData[dominantHand],
+      imageData[dominantHand === 'right' ? 'left' : 'right']
+    );
     lastReadingText = reading;
 
     // Store metadata for PDF
@@ -1058,7 +1062,7 @@ function downloadPDF() {
   doc.setFont('Times', 'normal');
   doc.setFontSize(INTRO_SIZE);
   C(MUTED);
-  const intro = 'The non-dominant hand shows what a person was born with — natural temperament, raw potential, and the soul\'s original blueprint. The dominant hand shows what they have done with it: how choice, experience, and time have shaped them.';
+  const intro = 'The non-dominant hand shows what a person was born with: natural temperament and raw potential. The dominant hand shows what they have done with it: how choice, experience, and time have shaped them.';
   const introLines = doc.splitTextToSize(intro, CW);
   doc.text(introLines, PAGE_W / 2, cy, { align: 'center' });
 
@@ -1097,7 +1101,7 @@ function downloadPDF() {
         doc.setFont('Times', 'italic');
         doc.setFontSize(9);
         C(FAINT);
-        doc.text('Read from both hands. For entertainment purposes — though the truest readings always feel a little too close to home.', PAGE_W / 2, ry, { align: 'center' });
+        doc.text('Read from both hands. For entertainment purposes only.', PAGE_W / 2, ry, { align: 'center' });
         return; // skip normal render
       }
       renderSectionHeader(section.label);
